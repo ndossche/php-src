@@ -1869,6 +1869,17 @@ flf_clean:
 	Z_FLF_PARAM_FREE_STR(2, needle_tmp);
 }
 
+static zend_always_inline bool str_ends_with(const zend_string *haystack, const zend_string *needle)
+{
+	if (ZSTR_LEN(needle) > ZSTR_LEN(haystack)) {
+		return false;
+	}
+
+	return memcmp(
+		ZSTR_VAL(haystack) + ZSTR_LEN(haystack) - ZSTR_LEN(needle),
+		ZSTR_VAL(needle), ZSTR_LEN(needle)) == 0;
+}
+
 /* {{{ Checks if haystack ends with needle */
 PHP_FUNCTION(str_ends_with)
 {
@@ -1879,15 +1890,24 @@ PHP_FUNCTION(str_ends_with)
 		Z_PARAM_STR(needle)
 	ZEND_PARSE_PARAMETERS_END();
 
-	if (ZSTR_LEN(needle) > ZSTR_LEN(haystack)) {
-		RETURN_FALSE;
-	}
-
-	RETURN_BOOL(memcmp(
-		ZSTR_VAL(haystack) + ZSTR_LEN(haystack) - ZSTR_LEN(needle),
-		ZSTR_VAL(needle), ZSTR_LEN(needle)) == 0);
+	RETURN_BOOL(str_ends_with(haystack, needle));
 }
 /* }}} */
+
+ZEND_FRAMELESS_FUNCTION(str_ends_with, 2)
+{
+	zval haystack_tmp, needle_tmp;
+	zend_string *haystack, *needle;
+
+	Z_FLF_PARAM_STR(1, haystack, haystack_tmp);
+	Z_FLF_PARAM_STR(2, needle, needle_tmp);
+
+	RETVAL_BOOL(str_ends_with(haystack, needle));
+
+flf_clean:
+	Z_FLF_PARAM_FREE_STR(1, haystack_tmp);
+	Z_FLF_PARAM_FREE_STR(2, needle_tmp);
+}
 
 static inline void _zend_strpos(zval *return_value, zend_string *haystack, zend_string *needle, zend_long offset)
 {
